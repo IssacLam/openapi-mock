@@ -41,6 +41,7 @@ type generationConfiguration struct {
 	NullProbability *float64 `json:"null_probability" yaml:"null_probability"`
 	SuppressErrors  bool     `json:"suppress_errors" yaml:"suppress_errors"`
 	UseExamples     string   `json:"use_examples" yaml:"use_examples"`
+	RandomResponse  bool     `json:"random_response" yaml:"random_response"`
 }
 
 func loadFileConfiguration(filename string) (*fileConfiguration, error) {

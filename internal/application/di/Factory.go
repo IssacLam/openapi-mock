@@ -61,7 +61,7 @@ func (factory *Factory) CreateHTTPHandler(router *openapi3filter.Router) http.Ha
 	}
 
 	dataGeneratorInstance := data.New(generatorOptions)
-	responseGeneratorInstance := responseGenerator.New(dataGeneratorInstance)
+	responseGeneratorInstance := responseGenerator.New(dataGeneratorInstance, factory.configuration.RandomResponse)
 	apiResponder := responder.New()
 
 	var httpHandler http.Handler

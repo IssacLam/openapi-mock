@@ -3,10 +3,12 @@ package negotiator
 import (
 	"context"
 	"math"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/muonsoft/openapi-mock/pkg/logcontext"
@@ -17,17 +19,46 @@ type StatusCodeNegotiator interface {
 	NegotiateStatusCode(request *http.Request, responses openapi3.Responses) (key string, code int, err error)
 }
 
-func NewStatusCodeNegotiator() StatusCodeNegotiator {
+func NewStatusCodeNegotiator(randomResponse bool) StatusCodeNegotiator {
 	return &statusCodeNegotiator{
+		randomResponse:         randomResponse,
 		rangeDefinitionPattern: regexp.MustCompile("^[1-5]xx$"),
 	}
 }
 
 type statusCodeNegotiator struct {
+	randomResponse         bool
 	rangeDefinitionPattern *regexp.Regexp
 }
 
 func (negotiator *statusCodeNegotiator) NegotiateStatusCode(request *http.Request, responses openapi3.Responses) (key string, code int, err error) {
+	if negotiator.randomResponse {
+		return negotiator.randomCode(request, responses)
+	}
+	return negotiator.minSuccessOrErrorCode(request, responses)
+}
+
+func (negotiator *statusCodeNegotiator) randomCode(request *http.Request, responses openapi3.Responses) (key string, code int, err error) {
+	length := len(responses)
+	keys := make([]string, 0, len(responses))
+	for k := range responses {
+		keys = append(keys, k)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(length, func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
+
+	for _, key := range keys {
+		code, err := negotiator.parseStatusCode(request.Context(), key)
+		if err != nil {
+			continue
+		}
+		return key, code, nil
+	}
+	return "", http.StatusInternalServerError, errors.Wrap(ErrNoMatchingResponse, "[statusCodeNegotiator] failed to negotiate response")
+}
+
+func (negotiator *statusCodeNegotiator) minSuccessOrErrorCode(request *http.Request, responses openapi3.Responses) (key string, code int, err error) {
 	minSuccessCode := math.MaxInt32
 	minSuccessCodeKey := ""
 	hasSuccessCode := false

@@ -31,6 +31,7 @@ type Configuration struct {
 	DefaultMinFloat float64
 	DefaultMaxFloat float64
 	SuppressErrors  bool
+	RandomResponse  bool
 }
 
 const (
@@ -59,5 +60,6 @@ func (config *Configuration) Dump() map[string]interface{} {
 		"DefaultMinFloat":  config.DefaultMinFloat,
 		"DefaultMaxFloat":  config.DefaultMaxFloat,
 		"SuppressErrors":   config.SuppressErrors,
+		"RandomResponse":   config.RandomResponse,
 	}
 }
